@@ -253,12 +253,12 @@ public class TorrentTestsConsole {
         Files.createFile(testPath);
         client.upload(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
-        Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
+        final Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
         client.close();
         client = new Client(TORRENT_IP);
         client.start();
         Thread.sleep(TIME_OUT_FOR_UPDATE);
-        Set<Client.TorrentClient.FileInfo> fileInfos2 = client.getList();
+        final Set<Client.TorrentClient.FileInfo> fileInfos2 = client.getList();
         assertTrue(fileInfos1.size() == fileInfos2.size());
         assertTrue(fileInfos1.size() == 1);
         for (Client.TorrentClient.FileInfo fileInfo1: fileInfos1) {
@@ -289,7 +289,7 @@ public class TorrentTestsConsole {
         Files.createFile(testPath);
         client.upload(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
-        Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
+        final Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
         client.close();
         torrent.close();
         torrent = new TorrentTracker();

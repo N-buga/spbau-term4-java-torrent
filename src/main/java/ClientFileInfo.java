@@ -68,7 +68,7 @@ public class ClientFileInfo {
         writer.println();
     }
 
-    static public ClientFileInfo readClientInfo(Scanner scanner) {
+    public static ClientFileInfo readClientInfo(Scanner scanner) {
         String stringPath = scanner.next();
         Path path = Paths.get(stringPath);
         long sizeOfFile = scanner.nextLong();

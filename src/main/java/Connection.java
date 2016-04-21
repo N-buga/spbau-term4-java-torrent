@@ -11,15 +11,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Connection implements AutoCloseable {
-    static public final int END_CONNECTION = -2;
-    static public final int EOF = -1;
-    static public final int LIST_QUERY = 1;
-    static public final int UPLOAD_QUERY = 2;
-    static public final int SOURCES_QUERY = 3;
-    static public final int UPDATE_QUERY = 4;
-    static public final int STAT_QUERY = 1;
-    static public final int GET_QUERY = 2;
-    static public final int COUNT_IP_PARTS = 4;
+    public static final int END_CONNECTION = -2;
+    public static final int EOF = -1;
+    public static final int LIST_QUERY = 1;
+    public static final int UPLOAD_QUERY = 2;
+    public static final int SOURCES_QUERY = 3;
+    public static final int UPDATE_QUERY = 4;
+    public static final int STAT_QUERY = 1;
+    public static final int GET_QUERY = 2;
+    public static final int COUNT_IP_PARTS = 4;
 
     private boolean isClosed = false;
     private boolean isUpdated = false;

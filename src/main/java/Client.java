@@ -23,15 +23,85 @@ public class Client implements AutoCloseable{
     public Client(String ipTorrent) {
         clientFileData = new ClientFileData();
         clientFileData.updateDataFromFile();
+        torrentClient = new TorrentClient(ipTorrent);
+    }
+
+    public void start() {
         torrentServer = new TorrentServer();
         torrentServer.start();
-        torrentClient = new TorrentClient(ipTorrent);
+        torrentClient.start();
     }
 
     public void close() {
         clientFileData.saveDataToFile();
         torrentClient.close();
         torrentServer.close();
+    }
+
+    private static void outFormat() {
+        System.out.printf("You can use the next formats: \n"
+                + "list <tracker-address> = get the list of available files from server\n"
+                + "get <tracker-address> <file-id> = mark the file to load in the future\n"
+                + "newfile <tracker-address> <path> = add available file to server\n"
+                + "run <tracker-address> = load all files, that we want to load\n");
+    }
+
+    public static void main(String[] args) {
+        final int minAllowedCountArgs = 3;
+        final boolean isExtraArgs = (args.length > minAllowedCountArgs);
+        final int argForExtraData = 3;
+        if (args.length < minAllowedCountArgs) {
+            System.out.println("Wrong format");
+            outFormat();
+            return;
+        }
+        String command = args[1];
+        String address = args[2];
+        Client client = new Client(address);
+        switch (command) {
+            case "list":
+                Set<Client.TorrentClient.FileInfo> answer = client.getList();
+                System.out.printf("The count of files: %d\nFiles are:\n", answer.size());
+                for (Client.TorrentClient.FileInfo file: answer) {
+                    System.out.printf("Name = %s, size = %d, id = %d\n", file.getName(),
+                            file.getSize(), file.getID());
+                }
+                break;
+            case "get":
+                if (!isExtraArgs) {
+                    System.out.println("Wrong format");
+                    outFormat();
+                    return;
+                }
+                String fileStringID = args[argForExtraData];
+                int fileID;
+                try {
+                    fileID = Integer.parseInt(fileStringID);
+                } catch (NumberFormatException e) {
+                    System.out.println("ID isn't a number");
+                    outFormat();
+                    return;
+                }
+                client.markAsWantToLoad(fileID);
+                break;
+            case "newfile":
+                if (!isExtraArgs) {
+                    System.out.println("Wrong format");
+                    outFormat();
+                    return;
+                }
+                String path = args[argForExtraData];
+                client.upload(Paths.get(path));
+                break;
+            case "run":
+                client.run();
+                break;
+            case "help":
+                outFormat();
+            default:
+                System.out.println("Wrong format");
+                outFormat();
+        }
     }
 
     public void resetData() {
@@ -99,6 +169,9 @@ public class Client implements AutoCloseable{
                 e.printStackTrace();
                 return;
             }
+        }
+
+        private void start() {
             scheduledExecutorService = Executors.newScheduledThreadPool(1);
             scheduledExecutorService.scheduleAtFixedRate(this::update, 0,
                     TorrentTracker.TIME_OUT_SCHEDULE / 2, TimeUnit.SECONDS);
@@ -464,7 +537,18 @@ public class Client implements AutoCloseable{
         return result;
     }
 
-    public Thread load(int id, boolean allowedDelte) {
-        return torrentClient.load(id, allowedDelte);
+    public Thread load(int id, boolean allowedDelete) {
+        return torrentClient.load(id, allowedDelete);
+    }
+
+    public void markAsWantToLoad(int fileID) {
+        clientFileData.addFileForLoad(fileID);
+    }
+
+    public void run() {
+        start();
+        for (int fileID: clientFileData.getFilesForLoad()) {
+            load(fileID, true);
+        }
     }
 }

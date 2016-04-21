@@ -26,7 +26,7 @@ public class ClientInfo {
         return (Arrays.equals(serverIP, clientInfo.getServerIP()) && serverPort == clientInfo.getServerPort());
     }
 
-    static public ClientInfo readFromFile(Scanner scanner) {
+    public static ClientInfo readFromFile(Scanner scanner) {
         byte[] ip = new byte[Connection.COUNT_IP_PARTS];
         for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
             ip[i] = scanner.nextByte();

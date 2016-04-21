@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class TorrentTracker implements AutoCloseable {
-    static public final int TIME_OUT_SCHEDULE =  20;
+    public static final int TIME_OUT_SCHEDULE =  20;
 
     private Set<Integer> idAvailableFiles;
     private Map<Integer, TrackerFileInfo> idFileMap;
@@ -133,8 +133,10 @@ public class TorrentTracker implements AutoCloseable {
             return;
         }
         idFileMap.put(maxID, new TrackerFileInfo(name, size, maxID));
-        idFileMap.get(maxID).addClient(connection.getClientInfo());
-        idAvailableFiles.add(maxID);
+        if (connection.getClientInfo() != null) {
+            idFileMap.get(maxID).addClient(connection.getClientInfo());
+            idAvailableFiles.add(maxID);
+        }
         try {
             connection.sendInt(maxID++);
         } catch (IOException e) {

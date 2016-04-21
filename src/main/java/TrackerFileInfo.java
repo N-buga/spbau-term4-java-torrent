@@ -39,7 +39,7 @@ public class TrackerFileInfo {
         return size;
     }
 
-    static public TrackerFileInfo readFromFile(Scanner scanner) {
+    public static TrackerFileInfo readFromFile(Scanner scanner) {
         int curId = scanner.nextInt();
         long size = scanner.nextLong();
         String name = scanner.next();

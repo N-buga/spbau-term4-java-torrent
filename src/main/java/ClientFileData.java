@@ -10,14 +10,19 @@ import java.util.*;
 public class ClientFileData {
     private Set<Integer> idAvailableFiles;
     private Map<Integer, ClientFileInfo> idFileMap;
+    private Set<Integer> filesForLoad;
 
     private final String CLIENT_DIRECTORY = "ClientData";
     private final String FILES_DATA = "FilesData";
 
-
-    ClientFileData() {
+    public ClientFileData() {
         idAvailableFiles = new HashSet<>();
         idFileMap = new HashMap<>();
+        filesForLoad = new HashSet<>();
+    }
+
+    public Set<Integer> getFilesForLoad() {
+        return filesForLoad;
     }
 
     public void resetData() {
@@ -67,6 +72,12 @@ public class ClientFileData {
                 writer.printf("%d\n", key);
                 idFileMap.get(key).printClientInfo(writer);
             }
+            writer.printf("\n");
+            writer.println(filesForLoad.size());
+            for (Integer fileID: filesForLoad) {
+                writer.printf("%d ", fileID);
+            }
+            writer.println();
         } catch (IOException e) {
             return false;
         }
@@ -88,8 +99,17 @@ public class ClientFileData {
             for (Integer id: idFileMap.keySet()) {
                 idAvailableFiles.add(id);
             }
+            int countFilesForLoad = scanner.nextInt();
+            for (int i = 0; i < countFilesForLoad; i++) {
+                int id = scanner.nextInt();
+                filesForLoad.add(id);
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
+    }
+
+    public void addFileForLoad(int fileID) {
+        filesForLoad.add(fileID);
     }
 }
