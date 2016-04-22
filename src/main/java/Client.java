@@ -427,7 +427,14 @@ public class Client implements AutoCloseable{
                 return false;
             }
             try {
-                byte[] partText = curConnection.readPart();
+                long fileSize = clientFileData.getIdFileMap().get(id).getSize();
+                int partLength;
+                if ((part + 1)*ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
+                    partLength = (int)fileSize%ClientFileInfo.SIZE_OF_FILE_PIECE;
+                } else {
+                    partLength = ClientFileInfo.SIZE_OF_FILE_PIECE;
+                }
+                byte[] partText = curConnection.readPart(partLength);
                 randomAccessFile.write(partText,
                                 part * ClientFileInfo.SIZE_OF_FILE_PIECE, partText.length);
             } catch (IOException e) {

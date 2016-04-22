@@ -125,8 +125,7 @@ public class Connection implements AutoCloseable {
         return END_CONNECTION;
     }
 
-    public byte[] readPart() {
-        int countOfBytes = readInt();
+    public byte[] readPart(int countOfBytes) {
         byte[] part = new byte[countOfBytes];
         try {
             int readBytes = in.read(part);
@@ -213,7 +212,6 @@ public class Connection implements AutoCloseable {
     public void sendPart(RandomAccessFile file, int offset, int len) throws IOException {
         byte[] data = new byte[len];
         file.read(data, offset, len);
-        out.writeInt(len);
         out.write(data, 0, len);
         out.flush();
     }
