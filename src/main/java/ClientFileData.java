@@ -114,6 +114,6 @@ public class ClientFileData {
     }
 
     public boolean isLoadedAllParts(int fileID) {
-        return idFileMap.get(fileID).getPartsOfFile().size() == idFileMap.get(fileID).getCountOfPieces();
+        return idFileMap.get(fileID).getPartsOfFile().cardinality() == idFileMap.get(fileID).getCountOfPieces();
     }
 }

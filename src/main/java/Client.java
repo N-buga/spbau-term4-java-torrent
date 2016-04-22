@@ -4,6 +4,7 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -335,10 +336,7 @@ public class Client implements AutoCloseable{
                 if (seeds == null) {
                     return;
                 }
-                Boolean[] loadParts = new Boolean[countOfParts + 1];
-                for (int i = 0; i < countOfParts + 1; i++) {
-                    loadParts[i] = false;
-                }
+                BitSet loadParts = new BitSet(countOfParts + 1);
                 for (ClientInfo seed: seeds) {
                     try (Socket socket = new Socket(InetAddress.getByAddress(seed.getServerIP()),
                             seed.getServerPort())) {
@@ -351,10 +349,10 @@ public class Client implements AutoCloseable{
                             if (part >= countOfParts) {
                                 continue;
                             }
-                            if (loadParts[part].equals(false)) {
+                            if (!loadParts.get(part)) {
                                 if (savePart(curConnection, part, id, curFile)) {
                                     clientFileData.addPart(id, part);
-                                    loadParts[part] = true;
+                                    loadParts.set(part);
                                 }
                             }
                         }
@@ -523,7 +521,7 @@ public class Client implements AutoCloseable{
             int id = curConnection.readInt();
             int part = curConnection.readInt();
             ClientFileInfo curInfo = clientFileData.getIdFileMap().get(id);
-            if (!curInfo.getPartsOfFile().contains(part)) {
+            if (!curInfo.getPartsOfFile().get(part)) {
                 curConnection.close();
                 return;
             }
@@ -544,10 +542,10 @@ public class Client implements AutoCloseable{
 
         private void getAvailablePartOfFile(Connection curConnection) {
             int fileId = curConnection.readInt();
-            Set<Integer> parts = clientFileData.getIdFileMap().get(fileId).getPartsOfFile();
+            BitSet partsOfFile = clientFileData.getIdFileMap().get(fileId).getPartsOfFile();
             try {
-                curConnection.sendInt(parts.size());
-                curConnection.sendIntegerSet(parts);
+                curConnection.sendInt(partsOfFile.cardinality());
+                curConnection.sendBitSet(partsOfFile);
             } catch (IOException e) {
                 e.printStackTrace();
                 curConnection.close();

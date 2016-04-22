@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -202,10 +203,21 @@ public class Connection implements AutoCloseable {
             out.flush();
         }
     }
+
     public void sendIntegerSet(Set<Integer> num) throws IOException {
         for (Integer number: num) {
             out.writeInt(number);
             out.flush();
+        }
+    }
+
+    public void sendBitSet(BitSet b) throws IOException {
+        out.flush();
+        for (int i = 0; i < b.size(); i++) {
+            if (b.get(i)) {
+                out.writeInt(i);
+                out.flush();
+            }
         }
     }
 

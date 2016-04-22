@@ -1,10 +1,12 @@
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
+import java.util.BitSet;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * Created by n_buga on 10.04.16.
@@ -12,7 +14,7 @@ import java.util.Set;
 public class ClientFileInfo {
     public static final int SIZE_OF_FILE_PIECE = (int) 1e5;
 
-    private Set<Integer> partsOfFile;
+    private BitSet partsOfFile;
     private Path filePath;
     private long size;
     private int countOfPieces = 0;
@@ -20,21 +22,19 @@ public class ClientFileInfo {
     public ClientFileInfo(long size, Path filePath) {
         this.size = size;
         this.filePath = filePath;
-        partsOfFile = new HashSet<>();
         countOfPieces =  (int) ((size - 1) / SIZE_OF_FILE_PIECE) + 1;
+        partsOfFile = new BitSet(countOfPieces);
     }
 
     public void addAllParts() {
-        for (int i = 0; i < ((size - 1) / SIZE_OF_FILE_PIECE + 1); i++) {
-            partsOfFile.add(i);
-        }
+        partsOfFile.set(0, countOfPieces);
     }
 
     public boolean addAvailablePart(int part) {
         if (part > countOfPieces) {
             return false;
         }
-        partsOfFile.add(part);
+        partsOfFile.set(part);
         return true;
     }
 
@@ -42,7 +42,7 @@ public class ClientFileInfo {
         return countOfPieces;
     }
 
-    public Set<Integer> getPartsOfFile() {
+    public BitSet getPartsOfFile() {
         return partsOfFile;
     }
 
@@ -61,10 +61,14 @@ public class ClientFileInfo {
 
     public void printClientInfo(PrintWriter writer) throws IOException {
         writer.printf(filePath.toAbsolutePath().toString() + " " + "%d\n", size);
-        writer.println(partsOfFile.size());
-        for (Integer part: partsOfFile) {
-            writer.printf("%d ", part);
+        writer.println(partsOfFile.cardinality());
+
+        for (int i = 0; i < partsOfFile.size(); i++) {
+            if (partsOfFile.get(i)) {
+                writer.printf("%d ", i);
+            }
         }
+
         writer.println();
     }
 
@@ -73,15 +77,17 @@ public class ClientFileInfo {
         Path path = Paths.get(stringPath);
         long sizeOfFile = scanner.nextLong();
         int countOfParts = scanner.nextInt();
-        Set<Integer> parts = new HashSet<>();
+        BitSet parts = new BitSet(countOfParts);
         for (int i = 0; i < countOfParts; i++) {
             int curPart = scanner.nextInt();
-            parts.add(curPart);
+            parts.set(curPart);
         }
         if (Files.exists(path)) {
             ClientFileInfo result = new ClientFileInfo(sizeOfFile, path);
-            for (Integer part: parts) {
-                result.addAvailablePart(part);
+            for (int part = 0; part < countOfParts; part++) {
+                if (parts.get(part)) {
+                    result.addAvailablePart(part);
+                }
             }
             return result;
         } else {
