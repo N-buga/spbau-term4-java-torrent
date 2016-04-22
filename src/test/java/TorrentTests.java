@@ -21,7 +21,7 @@ public final class TorrentTests {
         Path file2 = Paths.get(directory2.toString(), "2.txt");
         Files.createFile(file1);
         Files.createFile(file2);
-        String[] in = {"upload", file1.toString()};
+        String[] in = {"uploadInfo", file1.toString()};
         Client.main(in);
     }
 }

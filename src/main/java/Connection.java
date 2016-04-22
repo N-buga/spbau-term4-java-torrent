@@ -212,7 +212,7 @@ public class Connection implements AutoCloseable {
 
     public void sendPart(RandomAccessFile file, int offset, int len) throws IOException {
         byte[] data = new byte[len];
-        file.read(data);
+        file.read(data, offset, len);
         out.writeInt(len);
         out.write(data, 0, len);
         out.flush();

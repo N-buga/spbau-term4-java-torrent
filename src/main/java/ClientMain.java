@@ -14,7 +14,7 @@ public final class ClientMain {
     public static void outInfo() {
         String info = "Hello! Here's your oppotunities:\n"
                 + "list = to get the available files from tracker\n"
-                + "upload <Path from current directory>:String = tell server about you can give this file out\n"
+                + "uploadInfo <Path from current directory>:String = tell server about you can give this file out\n"
                 + "sources <id>:int = get the information about servers given out file with that id\n"
                 + "load <id>:int [-d] = load file with current id\n"
                 + "\t -d = if file exists, then it is allowed to delete it"
@@ -39,7 +39,7 @@ public final class ClientMain {
                                 file.getSize(), file.getID());
                     }
                     break;
-                case "upload":
+                case "uploadInfo":
                     String fileName = input.next();
                     Path file = Paths.get(".", fileName);
                     client.upload(file);

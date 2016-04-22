@@ -104,7 +104,7 @@ public class Client implements AutoCloseable{
     }
 
     public int upload(Path filePath) {
-        return torrentClient.upload(filePath);
+        return torrentClient.uploadInfo(filePath);
     }
 
     public Set<ClientInfo> sources(int id) {
@@ -230,9 +230,9 @@ public class Client implements AutoCloseable{
             return fileList;
         }
 
-        public int upload(Path filePath) {
+        public int uploadInfo(Path filePath) {
             lock.lock();
-            long size = 0;
+            long size;
             try {
                 size = Files.size(filePath);
             } catch (IOException e) {
