@@ -295,78 +295,80 @@ public class Client implements AutoCloseable{
         }
 
         public Thread load(int id, boolean allowedDelete) {
-            Thread loadThread = new Thread(() -> {
-                long size = -1;
-                int countOfParts = -1;
-                String name = "";
-                Set<FileInfo> fileList = getList();
-                for (FileInfo fi : fileList) {
-                    if (fi.getID() == id) {
-                        size = fi.getSize();
-                        name = fi.getName();
-                        countOfParts = fi.getCountParts();
-                    }
-                }
-                if (size == -1) {
-                    System.out.print("Not find file with ID = ");
-                    System.out.print(id);
-                    System.out.println();
-                    return;
-                }
-
-                RandomAccessFile curFile;
-                Path curPath;
-                try {
-                    curPath = Paths.get(".", "Download", Integer.toString(id), name);
-                    Files.createDirectories(curPath.getParent());
-                    if (Files.exists(curPath) && !allowedDelete) {
-                        System.out.println("Exist such file. Please move it or allow to delete it");
-                        return;
-                    }
-                    Files.deleteIfExists(curPath);
-                    Files.createFile(curPath);
-                    curFile = new RandomAccessFile(curPath.toString(), "rw");
-                } catch (IOException e) {
-                    System.out.println("Didn't manage to load file");
-                    e.printStackTrace();
-                    return;
-                }
-                clientFileData.addFile(id, size, curPath);
-                Set<ClientInfo> seeds = sources(id);
-                if (seeds == null) {
-                    return;
-                }
-                BitSet loadParts = new BitSet(countOfParts + 1);
-                for (ClientInfo seed: seeds) {
-                    try (Socket socket = new Socket(InetAddress.getByAddress(seed.getServerIP()),
-                            seed.getServerPort())) {
-                        Connection curConnection = new Connection(socket);
-                        curConnection.sendType(Connection.STAT_QUERY);
-                        curConnection.sendInt(id);
-                        int count = curConnection.readInt();
-                        for (int j = 0; j < count; j++) {
-                            int part = curConnection.readInt();
-                            if (part >= countOfParts) {
-                                continue;
-                            }
-                            if (!loadParts.get(part)) {
-                                if (savePart(curConnection, part, id, curFile)) {
-                                    clientFileData.addPart(id, part);
-                                    loadParts.set(part);
-                                }
-                            }
-                        }
-                    } catch (IOException e) {
-                        System.out.println("Connection for load file is out of order");
-                        e.printStackTrace();
-                    }
-                }
-                if (!clientFileData.isLoadedAllParts(id)) {
-                    System.out.printf("Can't load file with id = %d\n", id);
-                }
-            });
+            Thread loadThread = new Thread(() -> {loadInThread(id, allowedDelete);});
             loadThread.start();
             return loadThread;
+        }
+
+        private void loadInThread(int id, boolean allowedDelete) {
+            long size = -1;
+            int countOfParts = -1;
+            String name = "";
+            Set<FileInfo> fileList = getList();
+            for (FileInfo fi : fileList) {
+                if (fi.getID() == id) {
+                    size = fi.getSize();
+                    name = fi.getName();
+                    countOfParts = fi.getCountParts();
+                }
+            }
+            if (size == -1) {
+                System.out.print("Not find file with ID = ");
+                System.out.print(id);
+                System.out.println();
+                return;
+            }
+
+            RandomAccessFile curFile;
+            Path curPath;
+            try {
+                curPath = Paths.get(".", "Download", Integer.toString(id), name);
+                Files.createDirectories(curPath.getParent());
+                if (Files.exists(curPath) && !allowedDelete) {
+                    System.out.println("Exist such file. Please move it or allow to delete it");
+                    return;
+                }
+                Files.deleteIfExists(curPath);
+                Files.createFile(curPath);
+                curFile = new RandomAccessFile(curPath.toString(), "rw");
+            } catch (IOException e) {
+                System.out.println("Didn't manage to load file");
+                e.printStackTrace();
+                return;
+            }
+            clientFileData.addFile(id, size, curPath);
+            Set<ClientInfo> seeds = sources(id);
+            if (seeds == null) {
+                return;
+            }
+            BitSet loadParts = new BitSet(countOfParts + 1);
+            for (ClientInfo seed: seeds) {
+                try (Socket socket = new Socket(InetAddress.getByAddress(seed.getServerIP()),
+                        seed.getServerPort())) {
+                    Connection curConnection = new Connection(socket);
+                    curConnection.sendType(Connection.STAT_QUERY);
+                    curConnection.sendInt(id);
+                    int count = curConnection.readInt();
+                    for (int j = 0; j < count; j++) {
+                        int part = curConnection.readInt();
+                        if (part >= countOfParts) {
+                            continue;
+                        }
+                        if (!loadParts.get(part)) {
+                            if (savePart(curConnection, part, id, curFile)) {
+                                clientFileData.addPart(id, part);
+                                loadParts.set(part);
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    System.out.println("Connection for load file is out of order");
+                    e.printStackTrace();
+                }
+            }
+            if (!clientFileData.isLoadedAllParts(id)) {
+                System.out.printf("Can't load file with id = %d\n", id);
+            }
         }
 
         private void start() {
