@@ -112,17 +112,6 @@ public class Client implements AutoCloseable{
         return torrentClient.sources(id);
     }
 
-    public String ipAsString(byte[] ip) {
-        String result = "";
-        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
-            if (i != 0) {
-                result += '.';
-            }
-            result += Integer.toString(ip[i]);
-        }
-        return result;
-    }
-
     public Thread load(int id, boolean allowedDelete) {
         return torrentClient.load(id, allowedDelete);
     }
@@ -136,6 +125,17 @@ public class Client implements AutoCloseable{
         for (int fileID: clientFileData.getFilesForLoad()) {
             load(fileID, true);
         }
+    }
+
+    public static String ipAsString(byte[] ip) {
+        String result = "";
+        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
+            if (i != 0) {
+                result += '.';
+            }
+            result += Integer.toString(ip[i]);
+        }
+        return result;
     }
 
     private enum State {NOT_STARTED, END, MISSED_CONNECTION, RUNNING};
