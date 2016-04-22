@@ -41,7 +41,6 @@ public class Client implements AutoCloseable{
 
     public static void main(String[] args) {
         final int minAllowedCountArgs = 3;
-        final int argForExtraData = 3;
         if (args.length < minAllowedCountArgs) {
             System.out.println("Wrong format");
             outFormat();
@@ -61,7 +60,7 @@ public class Client implements AutoCloseable{
                 break;
             case "get":
                 assertExtraArgs(args);
-                String fileStringID = args[argForExtraData];
+                String fileStringID = args[3];
                 int fileID = -1;
                 try {
                     fileID = Integer.parseInt(fileStringID);
@@ -74,7 +73,7 @@ public class Client implements AutoCloseable{
                 break;
             case "newfile":
                 assertExtraArgs(args);
-                String path = args[argForExtraData];
+                String path = args[3];
                 client.upload(Paths.get(path));
                 break;
             case "run":
@@ -295,7 +294,9 @@ public class Client implements AutoCloseable{
         }
 
         public Thread load(int id, boolean allowedDelete) {
-            Thread loadThread = new Thread(() -> {loadInThread(id, allowedDelete);});
+            Thread loadThread = new Thread(() -> {
+                loadInThread(id, allowedDelete);
+            });
             loadThread.start();
             return loadThread;
         }
@@ -429,8 +430,8 @@ public class Client implements AutoCloseable{
             try {
                 long fileSize = clientFileData.getIdFileMap().get(id).getSize();
                 int partLength;
-                if ((part + 1)*ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
-                    partLength = (int)fileSize%ClientFileInfo.SIZE_OF_FILE_PIECE;
+                if ((part + 1) * ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
+                    partLength = (int) fileSize % ClientFileInfo.SIZE_OF_FILE_PIECE;
                 } else {
                     partLength = ClientFileInfo.SIZE_OF_FILE_PIECE;
                 }

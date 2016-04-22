@@ -13,12 +13,12 @@ public final class ClientMain {
 
     public static void outInfo() {
         String info = "Hello! Here's your oppotunities:\n"
-                + "list = to get the available files from tracker\n"
-                + "uploadInfo <Path from current directory>:String = tell server about you can give this file out\n"
-                + "sources <id>:int = get the information about servers given out file with that id\n"
-                + "load <id>:int [-d] = load file with current id\n"
-                + "\t -d = if file exists, then it is allowed to delete it"
-                + "exit = exit";
+            + "list = to get the available files from tracker\n"
+            + "uploadInfo <Path from current directory>:String = tell server about you can give this file out\n"
+            + "sources <id>:int = get the information about servers given out file with that id\n"
+            + "load <id>:int [-d] = load file with current id\n"
+            + "\t -d = if file exists, then it is allowed to delete it"
+            + "exit = exit";
         System.out.println(info);
     }
 
