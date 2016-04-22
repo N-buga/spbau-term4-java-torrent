@@ -38,17 +38,8 @@ public class Client implements AutoCloseable{
         torrentServer.close();
     }
 
-    private static void outFormat() {
-        System.out.printf("You can use the next formats: \n"
-                + "list <tracker-address> = get the list of available files from server\n"
-                + "get <tracker-address> <file-id> = mark the file to load in the future\n"
-                + "newfile <tracker-address> <path> = add available file to server\n"
-                + "run <tracker-address> = load all files, that we want to load\n");
-    }
-
     public static void main(String[] args) {
         final int minAllowedCountArgs = 3;
-        final boolean isExtraArgs = (args.length > minAllowedCountArgs);
         final int argForExtraData = 3;
         if (args.length < minAllowedCountArgs) {
             System.out.println("Wrong format");
@@ -68,13 +59,9 @@ public class Client implements AutoCloseable{
                 }
                 break;
             case "get":
-                if (!isExtraArgs) {
-                    System.out.println("Wrong format");
-                    outFormat();
-                    return;
-                }
+                assertExtraArgs(args);
                 String fileStringID = args[argForExtraData];
-                int fileID;
+                int fileID = -1;
                 try {
                     fileID = Integer.parseInt(fileStringID);
                 } catch (NumberFormatException e) {
@@ -85,11 +72,7 @@ public class Client implements AutoCloseable{
                 client.markAsWantToLoad(fileID);
                 break;
             case "newfile":
-                if (!isExtraArgs) {
-                    System.out.println("Wrong format");
-                    outFormat();
-                    return;
-                }
+                assertExtraArgs(args);
                 String path = args[argForExtraData];
                 client.upload(Paths.get(path));
                 break;
@@ -116,16 +99,55 @@ public class Client implements AutoCloseable{
         return torrentClient.getIP();
     }
 
+    public Set<TorrentClient.FileInfo> getList() {
+        return torrentClient.getList();
+    }
+
+    public int upload(Path filePath) {
+        return torrentClient.upload(filePath);
+    }
+
+    public Set<ClientInfo> sources(int id) {
+        return torrentClient.sources(id);
+    }
+
+    public String ipAsString(byte[] ip) {
+        String result = "";
+        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
+            if (i != 0) {
+                result += '.';
+            }
+            result += Integer.toString(ip[i]);
+        }
+        return result;
+    }
+
+    public Thread load(int id, boolean allowedDelete) {
+        return torrentClient.load(id, allowedDelete);
+    }
+
+    public void markAsWantToLoad(int fileID) {
+        clientFileData.addFileForLoad(fileID);
+    }
+
+    public void run() {
+        start();
+        for (int fileID: clientFileData.getFilesForLoad()) {
+            load(fileID, true);
+        }
+    }
+
     private enum State {NOT_STARTED, END, MISSED_CONNECTION, RUNNING};
 
     public class TorrentClient implements AutoCloseable {
-        private final int TIME_OUT_OF_WAITING_CONNECTION = 200;
+        private static final int TIME_OUT_OF_WAITING_CONNECTION = 200;
+        private static final int SERVER_PORT = 8081;
+
+        private final String ipTorrent;
+
         private Connection trackerConnection;
         private ScheduledExecutorService scheduledExecutorService;
-        private final int serverPort = 8081;
         private Socket trackerSocket;
-        private boolean end = false;
-        private String ipTorrent = "127.0.0.1";
         private State state = State.NOT_STARTED;
         private Lock lock = new ReentrantLock(true);
 
@@ -159,7 +181,7 @@ public class Client implements AutoCloseable{
             }
         }
 
-        TorrentClient(String ipTorrent) {
+        public TorrentClient(String ipTorrent) {
             this.ipTorrent = ipTorrent;
             Thread connectThread = new Thread(this::tryConnect);
             connectThread.start();
@@ -167,39 +189,13 @@ public class Client implements AutoCloseable{
                 connectThread.join(TIME_OUT_OF_WAITING_CONNECTION);
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                return;
+                System.exit(0);
             }
-        }
-
-        private void start() {
-            scheduledExecutorService = Executors.newScheduledThreadPool(1);
-            scheduledExecutorService.scheduleAtFixedRate(this::update, 0,
-                    TorrentTracker.TIME_OUT_SCHEDULE / 2, TimeUnit.SECONDS);
-        }
-
-        private void connect() {
-            trackerSocket = null;
-            try {
-                trackerSocket = new Socket(ipTorrent, serverPort);
-                state = State.RUNNING;
-            } catch (IOException e) {
-                return;
-            }
-            trackerConnection = new Connection(trackerSocket);
-        }
-
-        private void tryConnect() {
-            System.out.println("Try to connect");
-            while (state != State.RUNNING) {
-                connect();
-            }
-            System.out.println("Connection successfully repaired");
         }
 
         public void close() {
             System.out.println("Closed");
             state = State.END;
-            end = true;
             scheduledExecutorService.shutdown();
             try {
                 trackerSocket.close();
@@ -298,7 +294,7 @@ public class Client implements AutoCloseable{
         }
 
         public Thread load(int id, boolean allowedDelete) {
-            Thread loadThread = new Thread((Runnable) () -> {
+            Thread loadThread = new Thread(() -> {
                 long size = -1;
                 int countOfParts = -1;
                 String name = "";
@@ -330,6 +326,7 @@ public class Client implements AutoCloseable{
                     Files.createFile(curPath);
                     curFile = new RandomAccessFile(curPath.toString(), "rw");
                 } catch (IOException e) {
+                    System.out.println("Didn't manage to load file");
                     e.printStackTrace();
                     return;
                 }
@@ -355,18 +352,49 @@ public class Client implements AutoCloseable{
                                 continue;
                             }
                             if (loadParts[part].equals(false)) {
-                                savePart(curConnection, part, id, curFile);
-                                clientFileData.addPart(id, part);
-                                loadParts[part] = true;
+                                if (savePart(curConnection, part, id, curFile)) {
+                                    clientFileData.addPart(id, part);
+                                    loadParts[part] = true;
+                                }
                             }
                         }
                     } catch (IOException e) {
+                        System.out.println("Connection for load file is out of order");
                         e.printStackTrace();
                     }
+                }
+                if (!clientFileData.isLoadedAllParts(id)) {
+                    System.out.printf("Can't load file with id = %d\n", id);
                 }
             });
             loadThread.start();
             return loadThread;
+        }
+
+        private void start() {
+            scheduledExecutorService = Executors.newScheduledThreadPool(1);
+            scheduledExecutorService.scheduleAtFixedRate(this::update, 0,
+                    TorrentTracker.TIME_OUT_SCHEDULE / 2, TimeUnit.SECONDS);
+        }
+
+        private void connect() {
+            trackerSocket = null;
+            try {
+                trackerSocket = new Socket(ipTorrent, SERVER_PORT);
+                state = State.RUNNING;
+            } catch (IOException e) {
+                System.out.println("Can't connect with torrent");
+                return;
+            }
+            trackerConnection = new Connection(trackerSocket);
+        }
+
+        private void tryConnect() {
+            System.out.println("Try to connect");
+            while (state != State.RUNNING) {
+                connect();
+            }
+            System.out.println("Connection successfully repaired");
         }
 
         private Set<ClientInfo> sources(int id) {
@@ -389,13 +417,14 @@ public class Client implements AutoCloseable{
             return result;
         }
 
-        private void savePart(Connection curConnection, int part, int id, RandomAccessFile randomAccessFile) {
+        private boolean savePart(Connection curConnection, int part, int id, RandomAccessFile randomAccessFile) {
             try {
                 curConnection.sendType(Connection.GET_QUERY);
                 curConnection.sendInt(id);
                 curConnection.sendInt(part);
             } catch (IOException e) {
                 e.printStackTrace();
+                return false;
             }
             try {
                 byte[] partText = curConnection.readPart();
@@ -403,19 +432,22 @@ public class Client implements AutoCloseable{
                                 part * ClientFileInfo.SIZE_OF_FILE_PIECE, partText.length);
             } catch (IOException e) {
                 e.printStackTrace();
+                return false;
             }
+            return true;
         }
 
     }
 
     public class TorrentServer {
+        private final int TIME_OUT = 500;
+
         private boolean end = false;
         private ServerSocket serverSocket;
-        private final int TIME_OUT = 500;
         private Thread serverThread;
         private int port;
 
-        TorrentServer() {}
+        public TorrentServer() {}
 
         public int getPort() {
             return port;
@@ -425,7 +457,9 @@ public class Client implements AutoCloseable{
             try {
                 serverSocket = new ServerSocket(0);
             } catch (IOException e) {
+                System.out.println("Can't create server:");
                 e.printStackTrace();
+                System.exit(0);
             }
             this.port = serverSocket.getLocalPort();
             serverThread = new Thread(this::connectionHandler);
@@ -514,41 +548,19 @@ public class Client implements AutoCloseable{
         }
     }
 
-    public Set<TorrentClient.FileInfo> getList() {
-        return torrentClient.getList();
+    private static void outFormat() {
+        System.out.printf("You can use the next formats: \n"
+                + "list <tracker-address> = get the list of available files from server\n"
+                + "get <tracker-address> <file-id> = mark the file to load in the future\n"
+                + "newfile <tracker-address> <path> = add available file to server\n"
+                + "run <tracker-address> = load all files, that we want to load\n");
     }
 
-    public int upload(Path filePath) {
-        return torrentClient.upload(filePath);
-    }
-
-    public Set<ClientInfo> sources(int id) {
-        return torrentClient.sources(id);
-    }
-
-    public String ipAsString(byte[] ip) {
-        String result = "";
-        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
-            if (i != 0) {
-                result += '.';
-            }
-            result += Integer.toString(ip[i]);
-        }
-        return result;
-    }
-
-    public Thread load(int id, boolean allowedDelete) {
-        return torrentClient.load(id, allowedDelete);
-    }
-
-    public void markAsWantToLoad(int fileID) {
-        clientFileData.addFileForLoad(fileID);
-    }
-
-    public void run() {
-        start();
-        for (int fileID: clientFileData.getFilesForLoad()) {
-            load(fileID, true);
+    private static void assertExtraArgs(String[] args) {
+        if (args.length > 3) {
+            System.out.println("Wrong format");
+            outFormat();
+            System.exit(0);
         }
     }
 }

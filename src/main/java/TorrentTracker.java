@@ -36,6 +36,50 @@ public class TorrentTracker implements AutoCloseable {
         updateFromFile();
     }
 
+    public void close() {
+        saveToFile();
+        end = true;
+        try {
+            serverThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static byte[] getBytes(String ip) {
+        byte[] result = new byte[Connection.COUNT_IP_PARTS];
+        String ipPart = ip.split(":")[0];
+        String ipWhole = ipPart.split("/")[1];
+        String[] parts = ipWhole.split("\\.");
+
+        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
+            result[i] = (byte) ((int) parseIntOrNull(parts[i]));
+        }
+        return result;
+    }
+
+    public void resetData() {
+        Path toDataFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
+        try {
+            Files.deleteIfExists(toDataFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void start() {
+        serverThread = new Thread(this::connectionHandler);
+        serverThread.start();
+    }
+
+    private static Integer parseIntOrNull(String a) {
+        try {
+            return Integer.parseInt(a);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     private void updateFromFile() {
         Path pathToFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
         if (!Files.exists(pathToFile)) {
@@ -75,31 +119,7 @@ public class TorrentTracker implements AutoCloseable {
         }
     }
 
-    public void close() {
-        saveToFile();
-        end = true;
-        try {
-            serverThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void resetData() {
-        Path toDataFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
-        try {
-            Files.deleteIfExists(toDataFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void start() {
-        serverThread = new Thread(this::connectionHandler);
-        serverThread.start();
-    }
-
-    public void getListOfAvailableFiles(Connection connection) {
+    private void getListOfAvailableFiles(Connection connection) {
         try {
             Set<TrackerFileInfo> availableFiles =
                     idAvailableFiles.stream().map(idFileMap::get).collect(Collectors.toSet());
@@ -110,7 +130,7 @@ public class TorrentTracker implements AutoCloseable {
         }
     }
 
-    public void upload(Connection connection) {
+    private void upload(Connection connection) {
         if (connection.getClientInfo() == null) {
             try {
                 connection.sendInt(-1);
@@ -145,7 +165,7 @@ public class TorrentTracker implements AutoCloseable {
         }
     }
 
-    public void getSources(Connection connection) {
+    private void getSources(Connection connection) {
         int fileID = connection.readInt();
         if (fileID == -1) {
             try {
@@ -174,7 +194,7 @@ public class TorrentTracker implements AutoCloseable {
         }
     }
 
-    public void update(Connection connection) {
+    private void update(Connection connection) {
         connection.update();
 
         int port = connection.readInt();
@@ -219,18 +239,6 @@ public class TorrentTracker implements AutoCloseable {
         }
     }
 
-    public byte[] getBytes(String ip) {
-        byte[] result = new byte[Connection.COUNT_IP_PARTS];
-        String ipPart = ip.split(":")[0];
-        String ipWhole = ipPart.split("/")[1];
-        String[] parts = ipWhole.split("\\.");
-
-        for (int i = 0; i < Connection.COUNT_IP_PARTS; i++) {
-            result[i] = (byte) ((int) parseIntOrNull(parts[i]));
-        }
-        return result;
-    }
-
     private void addClient(ClientInfo curClientInfo, int idFile) {
         try {
             TrackerFileInfo currentTrackerFileInfo = idFileMap.get(idFile);
@@ -246,14 +254,6 @@ public class TorrentTracker implements AutoCloseable {
         } catch (NullPointerException e) {
             System.out.println("This id we doesn't exist:");
             System.out.println(idFile);
-        }
-    }
-
-    private Integer parseIntOrNull(String a) {
-        try {
-            return Integer.parseInt(a);
-        } catch (NumberFormatException e) {
-            return null;
         }
     }
 

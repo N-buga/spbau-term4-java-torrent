@@ -112,4 +112,8 @@ public class ClientFileData {
     public void addFileForLoad(int fileID) {
         filesForLoad.add(fileID);
     }
+
+    public boolean isLoadedAllParts(int fileID) {
+        return idFileMap.get(fileID).getPartsOfFile().size() == idFileMap.get(fileID).getCountOfPieces();
+    }
 }

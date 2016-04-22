@@ -11,7 +11,7 @@ public final class ClientMain {
 
     }
 
-    static void outInfo() {
+    public static void outInfo() {
         String info = "Hello! Here's your oppotunities:\n"
                 + "list = to get the available files from tracker\n"
                 + "upload <Path from current directory>:String = tell server about you can give this file out\n"
@@ -21,6 +21,7 @@ public final class ClientMain {
                 + "exit = exit";
         System.out.println(info);
     }
+
     public static void main(String[] args) {
         outInfo();
         Scanner input = new Scanner(System.in);

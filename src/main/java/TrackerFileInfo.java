@@ -13,7 +13,7 @@ public class TrackerFileInfo {
     private long size;
     private Set<ClientInfo> clientInfos = new HashSet<>();
 
-    TrackerFileInfo(String name, long size, int id) {
+    public TrackerFileInfo(String name, long size, int id) {
         this.name = name;
         this.size = size;
         this.id = id;
