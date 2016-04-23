@@ -12,7 +12,7 @@ public class ClientFileData {
     private Map<Integer, ClientFileInfo> idFileMap;
     private Set<Integer> filesForLoad;
 
-    private final String CLIENT_DIRECTORY = "ClientData";
+    private String clientDirectory = "ClientData";
     private final String FILES_DATA = "FilesData";
 
     public ClientFileData() {
@@ -21,14 +21,22 @@ public class ClientFileData {
         filesForLoad = new HashSet<>();
     }
 
+    public ClientFileData(String clientDirectory) {
+        idAvailableFiles = new HashSet<>();
+        idFileMap = new HashMap<>();
+        filesForLoad = new HashSet<>();
+        this.clientDirectory = clientDirectory;
+    }
+
     public Set<Integer> getFilesForLoad() {
         return filesForLoad;
     }
 
     public void resetData() {
-        Path toDataFile = Paths.get(".", CLIENT_DIRECTORY, FILES_DATA);
+        Path toDataFile = Paths.get(".", clientDirectory, FILES_DATA);
         try {
             Files.deleteIfExists(toDataFile);
+            Files.deleteIfExists(toDataFile.getParent());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -58,7 +66,7 @@ public class ClientFileData {
     }
 
     public boolean saveDataToFile() {
-        Path pathToFile = Paths.get(".", CLIENT_DIRECTORY, FILES_DATA);
+        Path pathToFile = Paths.get(".", clientDirectory, FILES_DATA);
         try {
             Files.createDirectories(pathToFile.getParent());
             Files.deleteIfExists(pathToFile);
@@ -85,7 +93,7 @@ public class ClientFileData {
     }
 
     public void updateDataFromFile() {
-        Path pathToFile = Paths.get(".", CLIENT_DIRECTORY, FILES_DATA);
+        Path pathToFile = Paths.get(".", clientDirectory, FILES_DATA);
         if (!Files.exists(pathToFile)) {
             return;
         }

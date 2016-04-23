@@ -27,6 +27,12 @@ public class Client implements AutoCloseable{
         torrentClient = new TorrentClient(ipTorrent);
     }
 
+    public Client(String ipTorrent, String directoryForData) {
+        clientFileData = new ClientFileData(directoryForData);
+        clientFileData.updateDataFromFile();
+        torrentClient = new TorrentClient(ipTorrent);
+    }
+
     public void start() {
         torrentServer = new TorrentServer();
         torrentServer.start();
@@ -36,19 +42,22 @@ public class Client implements AutoCloseable{
     public void close() {
         clientFileData.saveDataToFile();
         torrentClient.close();
-        torrentServer.close();
+        if (torrentServer != null) {
+            torrentServer.close();
+        }
     }
 
     public static void main(String[] args) {
-        final int minAllowedCountArgs = 3;
+        final int minAllowedCountArgs = 2;
         if (args.length < minAllowedCountArgs) {
             System.out.println("Wrong format");
             outFormat();
             return;
         }
-        String command = args[1];
-        String address = args[2];
+        String command = args[0];
+        String address = args[1];
         Client client = new Client(address);
+
         switch (command) {
             case "list":
                 Set<Client.TorrentClient.FileInfo> answer = client.getList();
@@ -60,7 +69,7 @@ public class Client implements AutoCloseable{
                 break;
             case "get":
                 assertExtraArgs(args);
-                String fileStringID = args[3];
+                String fileStringID = args[2];
                 int fileID = -1;
                 try {
                     fileID = Integer.parseInt(fileStringID);
@@ -73,18 +82,21 @@ public class Client implements AutoCloseable{
                 break;
             case "newfile":
                 assertExtraArgs(args);
-                String path = args[3];
-                client.upload(Paths.get(path));
+                String path = args[2];
+                client.uploadInfo(Paths.get(path));
                 break;
             case "run":
                 client.run();
-                break;
+                while (true) {
+                    int b = 1;
+                }
             case "help":
                 outFormat();
             default:
                 System.out.println("Wrong format");
                 outFormat();
         }
+        client.close();
     }
 
     public void resetData() {
@@ -103,7 +115,7 @@ public class Client implements AutoCloseable{
         return torrentClient.getList();
     }
 
-    public int upload(Path filePath) {
+    public int uploadInfo(Path filePath) {
         return torrentClient.uploadInfo(filePath);
     }
 
@@ -119,11 +131,13 @@ public class Client implements AutoCloseable{
         clientFileData.addFileForLoad(fileID);
     }
 
-    public void run() {
+    public Set<Thread> run() {
         start();
+        Set<Thread> loadThreads = new HashSet<>();
         for (int fileID: clientFileData.getFilesForLoad()) {
-            load(fileID, true);
+            loadThreads.add(load(fileID, true));
         }
+        return loadThreads;
     }
 
     public static String ipAsString(byte[] ip) {
@@ -142,6 +156,7 @@ public class Client implements AutoCloseable{
     public class TorrentClient implements AutoCloseable {
         private static final int TIME_OUT_OF_WAITING_CONNECTION = 200;
         private static final int SERVER_PORT = 8081;
+        private static final String DOWNLOAD_DIRECTORY = "downloads";
 
         private final String ipTorrent;
 
@@ -196,7 +211,9 @@ public class Client implements AutoCloseable{
         public void close() {
             System.out.println("Closed");
             state = State.END;
-            scheduledExecutorService.shutdown();
+            if (scheduledExecutorService != null) {
+                scheduledExecutorService.shutdown();
+            }
             try {
                 trackerSocket.close();
             } catch (IOException e) {
@@ -235,6 +252,7 @@ public class Client implements AutoCloseable{
             long size;
             try {
                 size = Files.size(filePath);
+                System.out.println(size);
             } catch (IOException e) {
                 System.out.println("Sorry, file doesn't exist");
                 lock.unlock();
@@ -323,7 +341,7 @@ public class Client implements AutoCloseable{
             RandomAccessFile curFile;
             Path curPath;
             try {
-                curPath = Paths.get(".", "Download", Integer.toString(id), name);
+                curPath = Paths.get(".", DOWNLOAD_DIRECTORY, Integer.toString(id), name);
                 Files.createDirectories(curPath.getParent());
                 if (Files.exists(curPath) && !allowedDelete) {
                     System.out.println("Exist such file. Please move it or allow to delete it");
@@ -368,7 +386,10 @@ public class Client implements AutoCloseable{
                 }
             }
             if (!clientFileData.isLoadedAllParts(id)) {
-                System.out.printf("Can't load file with id = %d\n", id);
+                System.out.printf("File with id = %d wasn't loaded\n", id);
+            } else {
+                System.out.printf("File with id = %d is loaded\n", id);
+
             }
         }
 
@@ -384,6 +405,7 @@ public class Client implements AutoCloseable{
                 trackerSocket = new Socket(ipTorrent, SERVER_PORT);
                 state = State.RUNNING;
             } catch (IOException e) {
+                e.printStackTrace();
                 System.out.println("Can't connect with torrent");
                 return;
             }
@@ -565,7 +587,7 @@ public class Client implements AutoCloseable{
     }
 
     private static void assertExtraArgs(String[] args) {
-        if (args.length > 3) {
+        if (args.length < 3) {
             System.out.println("Wrong format");
             outFormat();
             System.exit(0);

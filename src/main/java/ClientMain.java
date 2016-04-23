@@ -42,7 +42,7 @@ public final class ClientMain {
                 case "uploadInfo":
                     String fileName = input.next();
                     Path file = Paths.get(".", fileName);
-                    client.upload(file);
+                    client.uploadInfo(file);
                     System.out.println("Ready!");
                     break;
                 case "sources":

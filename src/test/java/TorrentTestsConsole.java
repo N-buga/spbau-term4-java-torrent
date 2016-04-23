@@ -50,7 +50,7 @@ public class TorrentTestsConsole {
         Path testPath = Paths.get(".", TEST_NAME);
         Files.deleteIfExists(testPath);
         Files.createFile(testPath);
-        client.upload(testPath);
+        client.uploadInfo(testPath);
         Set<Client.TorrentClient.FileInfo> listAvailableFiles = client.getList();
         assertTrue(listAvailableFiles.size() == 1);
         for (Client.TorrentClient.FileInfo fileInfo: listAvailableFiles) {
@@ -77,7 +77,7 @@ public class TorrentTestsConsole {
         Path testPath = Paths.get(".", TEST_NAME);
         Files.deleteIfExists(testPath);
         Files.createFile(testPath);
-        client.upload(testPath);
+        client.uploadInfo(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         Set<ClientInfo> info = client.sources(curID);
         assertTrue(info.size() == 1);
@@ -108,8 +108,8 @@ public class TorrentTestsConsole {
         Files.deleteIfExists(testPath2);
         Files.createFile(testPath1);
         Files.createFile(testPath2);
-        int id1 = client1.upload(testPath1);
-        int id2 = client2.upload(testPath2);
+        int id1 = client1.uploadInfo(testPath1);
+        int id2 = client2.uploadInfo(testPath2);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         Set<Client.TorrentClient.FileInfo> listAvailableFiles = client1.getList();
         assertTrue(listAvailableFiles.size() == 2);
@@ -148,8 +148,8 @@ public class TorrentTestsConsole {
         Files.deleteIfExists(testPath2);
         Files.createFile(testPath1);
         Files.createFile(testPath2);
-        int id1 = client1.upload(testPath1);
-        int id2 = client2.upload(testPath2);
+        int id1 = client1.uploadInfo(testPath1);
+        int id2 = client2.uploadInfo(testPath2);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         Set<ClientInfo> clients2 = client1.sources(id2);
         Set<ClientInfo> clients1 = client2.sources(id1);
@@ -184,13 +184,13 @@ public class TorrentTestsConsole {
         Path testPath = Paths.get(".", TEST_NAME);
         Files.deleteIfExists(testPath);
         Files.createFile(testPath);
-        client1.upload(testPath);
+        client1.uploadInfo(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         Client client2 = new Client(TORRENT_IP);
         client2.start();
         Thread loadThread = client2.load(0, true);
         loadThread.join();
-        Path path = Paths.get(".", "Download", "0", TEST_NAME);
+        Path path = Paths.get(".", "downloads", "0", TEST_NAME);
         assertTrue(Files.exists(path));
         assertTrue(Files.size(path) == 0);
         Files.deleteIfExists(testPath);
@@ -218,13 +218,13 @@ public class TorrentTestsConsole {
         outFile.writeUTF(TEST_CONTAIN);
         outFile.flush();
         outFile.close();
-        client1.upload(testPath);
+        client1.uploadInfo(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         Client client2 = new Client(TORRENT_IP);
         client2.start();
         Thread loadThread = client2.load(0, true);
         loadThread.join();
-        Path path = Paths.get(".", "Download", "0", TEST_NAME);
+        Path path = Paths.get(".", "downloads", "0", TEST_NAME);
         assertTrue(Files.exists(path));
         assertTrue(Files.size(path) == Files.size(testPath));
         DataInputStream inFile = new DataInputStream(new FileInputStream(path.toString()));
@@ -251,7 +251,7 @@ public class TorrentTestsConsole {
         Path testPath = Paths.get(".", TEST_NAME);
         Files.deleteIfExists(testPath);
         Files.createFile(testPath);
-        client.upload(testPath);
+        client.uploadInfo(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         final Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
         client.close();
@@ -287,7 +287,7 @@ public class TorrentTestsConsole {
         Path testPath = Paths.get(".", TEST_NAME);
         Files.deleteIfExists(testPath);
         Files.createFile(testPath);
-        client.upload(testPath);
+        client.uploadInfo(testPath);
         Thread.sleep(TIME_OUT_AFTER_UPLOAD_FILE);
         final Set<Client.TorrentClient.FileInfo> fileInfos1 = client.getList();
         client.close();

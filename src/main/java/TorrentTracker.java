@@ -131,7 +131,7 @@ public class TorrentTracker implements AutoCloseable {
     }
 
     private void upload(Connection connection) {
-        if (connection.getClientInfo() == null) {
+/*        if (connection.getClientInfo() == null) {
             try {
                 connection.sendInt(-1);
             } catch (IOException e) {
@@ -139,7 +139,7 @@ public class TorrentTracker implements AutoCloseable {
                 e.printStackTrace();
                 connection.close();
             }
-        }
+        } */
         String name = connection.readString();
         long size = connection.readLong();
 
