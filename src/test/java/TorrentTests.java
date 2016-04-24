@@ -1,7 +1,13 @@
 /**
  * Created by n_buga on 19.04.16.
  */
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import ru.spbau.mit.Client;
+import ru.spbau.mit.TorrentClientMain;
+import ru.spbau.mit.TorrentTracker;
+
 import static org.junit.Assert.assertTrue;
 
 import java.io.*;
@@ -24,6 +30,25 @@ public final class TorrentTests {
     private final int TIME_OUT_FOR_UPDATE = 50;
     private final String CONTAINS = "cat";
 
+    private Client clientCheck;
+    private Client runClient;
+
+    public void createClients() {
+        clientCheck = new Client(IP_TORRENT);
+    }
+
+    @After public void closeClients() {
+        if (clientCheck != null) {
+            clientCheck.close();
+            clientCheck.resetData();
+        }
+        if (runClient != null) {
+            runClient.close();
+            runClient.resetData();
+        }
+        System.out.println("______________________");
+    }
+
     @Test
     public void testListSimple() throws IOException {
         Path directory1 = Paths.get(".", "1");
@@ -40,12 +65,11 @@ public final class TorrentTests {
             Files.createFile(file2);
             String[] in1 = {UPLOAD_QUERY, IP_TORRENT, file1.toString()};
             String[] in2 = {UPLOAD_QUERY, IP_TORRENT, file2.toString()};
-            Client.main(in1);
-            Client.main(in2);
+            TorrentClientMain.main(in1);
+            TorrentClientMain.main(in2);
             Client clientCheck = new Client(IP_TORRENT);
             Set<Client.TorrentClient.FileInfo> list = clientCheck.getList();
             assertTrue(list.size() == 0);
-            torrent.close();
             clientCheck.close();
             clientCheck.resetData();
         } catch (InterruptedException e) {
@@ -69,46 +93,42 @@ public final class TorrentTests {
         Path file2 = Paths.get(directory2.toString(), "2.txt");
         try (TorrentTracker torrentTracker = new TorrentTracker()) {
             torrentTracker.start();
-            try (Client clientCheck = new Client(IP_TORRENT);) {
+            Thread.sleep(TIME_OUT_AFTER_SERVER_START);
 
-                Thread.sleep(TIME_OUT_AFTER_SERVER_START);
-                Files.createDirectory(directory1);
-                Files.createDirectory(directory2);
-                Files.createFile(file1);
-                Files.createFile(file2);
-                String[] in1 = {UPLOAD_QUERY, IP_TORRENT, file1.toString()};
-                String[] in2 = {UPLOAD_QUERY, IP_TORRENT, file2.toString()};
-                Client.main(in1);
-                Client.main(in2);
+            createClients();
 
-                int i = 0;
+            Files.createDirectory(directory1);
+            Files.createDirectory(directory2);
+            Files.createFile(file1);
+            Files.createFile(file2);
+            String[] in1 = {UPLOAD_QUERY, IP_TORRENT, file1.toString()};
+            String[] in2 = {UPLOAD_QUERY, IP_TORRENT, file2.toString()};
+            TorrentClientMain.main(in1);
+            TorrentClientMain.main(in2);
 
-                Client runClient = new Client(IP_TORRENT);
-                runClient.run();
-                Thread.sleep(TIME_OUT_FOR_UPDATE);
-                Client.main(LIST_QUERY);
+            int i = 0;
 
-                Set<Client.TorrentClient.FileInfo> list = clientCheck.getList();
-                assertTrue(list.size() == 2);
-                Set<String> rightNames = new HashSet<>();
-                rightNames.add("1.txt");
-                rightNames.add(file2.getFileName().toString());
-                assertTrue(rightNames.equals(list.stream().map(Client.TorrentClient.FileInfo::getName).
-                        collect(Collectors.toCollection(TreeSet::new))));
+            runClient = new Client(IP_TORRENT);
+            runClient.run();
+            Thread.sleep(TIME_OUT_FOR_UPDATE);
 
-                runClient.close();
-                runClient.resetData();
+            TorrentClientMain.main(LIST_QUERY);
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                Files.deleteIfExists(file1);
-                Files.deleteIfExists(file2);
-                Files.deleteIfExists(directory1);
-                Files.deleteIfExists(directory2);
-            }
+            Set<Client.TorrentClient.FileInfo> list = clientCheck.getList();
+            assertTrue(list.size() == 2);
+            Set<String> rightNames = new HashSet<>();
+            rightNames.add("1.txt");
+            rightNames.add(file2.getFileName().toString());
+            assertTrue(rightNames.equals(list.stream().map(Client.TorrentClient.FileInfo::getName).
+                    collect(Collectors.toCollection(TreeSet::new))));
+
+         } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        } finally {
+            Files.deleteIfExists(file1);
+            Files.deleteIfExists(file2);
+            Files.deleteIfExists(directory1);
+            Files.deleteIfExists(directory2);
         }
     }
 
@@ -122,6 +142,8 @@ public final class TorrentTests {
         try (TorrentTracker torrentTracker = new TorrentTracker()) {
             torrentTracker.start();
 
+            Thread.sleep(TIME_OUT_AFTER_SERVER_START);
+
             Files.createDirectory(directory);
             Files.createFile(file);
             DataOutputStream outFile = new DataOutputStream(new FileOutputStream(file.toString()));
@@ -133,13 +155,14 @@ public final class TorrentTests {
                 Thread.sleep(TIME_OUT_AFTER_SERVER_START);
 
                 String[] in = {UPLOAD_QUERY, IP_TORRENT, file.toString()};
-                Client.main(in);
+                TorrentClientMain.main(in);
 
                 Client runClient = new Client(IP_TORRENT);
                 runClient.start();
 
                 Thread.sleep(TIME_OUT_FOR_UPDATE);
-                Client.main(LIST_QUERY);
+
+                TorrentClientMain.main(LIST_QUERY);
 
                 Set<Client.TorrentClient.FileInfo> availableFiles = clientCheck.getList();
                 assertTrue(availableFiles.size() > 0);

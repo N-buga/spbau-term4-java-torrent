@@ -1,3 +1,5 @@
+package ru.spbau.mit;
+
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +35,7 @@ public class ClientFileData {
     }
 
     public void resetData() {
-        Path toDataFile = Paths.get(".", clientDirectory, FILES_DATA);
+        Path toDataFile = Paths.get("", clientDirectory, FILES_DATA);
         try {
             Files.deleteIfExists(toDataFile);
             Files.deleteIfExists(toDataFile.getParent());
@@ -66,7 +68,7 @@ public class ClientFileData {
     }
 
     public boolean saveDataToFile() {
-        Path pathToFile = Paths.get(".", clientDirectory, FILES_DATA);
+        Path pathToFile = Paths.get("", clientDirectory, FILES_DATA);
         try {
             Files.createDirectories(pathToFile.getParent());
             Files.deleteIfExists(pathToFile);
@@ -93,7 +95,7 @@ public class ClientFileData {
     }
 
     public void updateDataFromFile() {
-        Path pathToFile = Paths.get(".", clientDirectory, FILES_DATA);
+        Path pathToFile = Paths.get("", clientDirectory, FILES_DATA);
         if (!Files.exists(pathToFile)) {
             return;
         }

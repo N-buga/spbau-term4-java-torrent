@@ -3,6 +3,9 @@
  */
 
 import org.junit.Test;
+import ru.spbau.mit.Client;
+import ru.spbau.mit.ClientInfo;
+import ru.spbau.mit.TorrentTracker;
 
 import java.io.*;
 import java.nio.file.Files;

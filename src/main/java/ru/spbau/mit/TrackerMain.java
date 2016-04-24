@@ -1,3 +1,5 @@
+package ru.spbau.mit;
+
 import java.util.Scanner;
 
 /**

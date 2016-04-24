@@ -1,4 +1,4 @@
-/**
+package ru.spbau.mit; /**
  * Created by n_buga on 31.03.16.
  */
 
@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;

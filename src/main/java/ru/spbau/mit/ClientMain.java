@@ -1,3 +1,5 @@
+package ru.spbau.mit;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
@@ -41,7 +43,7 @@ public final class ClientMain {
                     break;
                 case "uploadInfo":
                     String fileName = input.next();
-                    Path file = Paths.get(".", fileName);
+                    Path file = Paths.get("", fileName);
                     client.uploadInfo(file);
                     System.out.println("Ready!");
                     break;

@@ -1,4 +1,4 @@
-/**
+package ru.spbau.mit; /**
  * Created by n_buga on 31.03.16.
  */
 
@@ -59,7 +59,7 @@ public class TorrentTracker implements AutoCloseable {
     }
 
     public void resetData() {
-        Path toDataFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
+        Path toDataFile = Paths.get("", TRACKER_DIRECTORY, FILES_DATA);
         try {
             Files.deleteIfExists(toDataFile);
         } catch (IOException e) {
@@ -81,7 +81,7 @@ public class TorrentTracker implements AutoCloseable {
     }
 
     private void updateFromFile() {
-        Path pathToFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
+        Path pathToFile = Paths.get("", TRACKER_DIRECTORY, FILES_DATA);
         if (!Files.exists(pathToFile)) {
             return;
         }
@@ -99,7 +99,7 @@ public class TorrentTracker implements AutoCloseable {
     }
 
     private void saveToFile() {
-        Path pathToFile = Paths.get(".", TRACKER_DIRECTORY, FILES_DATA);
+        Path pathToFile = Paths.get("", TRACKER_DIRECTORY, FILES_DATA);
         try {
             Files.deleteIfExists(pathToFile);
             Files.createDirectories(pathToFile.getParent());
@@ -131,15 +131,6 @@ public class TorrentTracker implements AutoCloseable {
     }
 
     private void upload(Connection connection) {
-/*        if (connection.getClientInfo() == null) {
-            try {
-                connection.sendInt(-1);
-            } catch (IOException e) {
-                System.out.println("ClientInfo = null");
-                e.printStackTrace();
-                connection.close();
-            }
-        } */
         String name = connection.readString();
         long size = connection.readLong();
 
