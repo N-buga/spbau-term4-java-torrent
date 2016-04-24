@@ -2,13 +2,10 @@
  * Created by n_buga on 19.04.16.
  */
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import ru.spbau.mit.Client;
 import ru.spbau.mit.TorrentClientMain;
 import ru.spbau.mit.TorrentTracker;
-
-import static org.junit.Assert.assertTrue;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -18,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertTrue;
 
 public final class TorrentTests {
     public static final String IP_TORRENT = "127.0.0.1";

@@ -6,7 +6,8 @@ import java.util.Set;
 /**
  * Created by n_buga on 23.04.16.
  */
-public class TorrentClientMain {
+public abstract class TorrentClientMain {
+
     public static void main(String[] args) {
         final int minAllowedCountArgs = 2;
         if (args.length < minAllowedCountArgs) {
