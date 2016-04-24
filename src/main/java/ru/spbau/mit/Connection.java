@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -130,8 +129,13 @@ public class Connection implements AutoCloseable {
     public byte[] readPart(int countOfBytes) {
         byte[] part = new byte[countOfBytes];
         try {
-            int readBytes = in.read(part);
-            if (readBytes != countOfBytes) {
+            int readBytes = 0;
+            int prevValue = -1;
+            while (readBytes < countOfBytes && prevValue != readBytes) {
+                prevValue = readBytes;
+                readBytes += in.read(part, 0, countOfBytes - readBytes);
+            }
+            if (readBytes < countOfBytes) {
                 return null;
             }
         } catch (IOException e) {

@@ -2,15 +2,17 @@
  * Created by n_buga on 19.04.16.
  */
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import ru.spbau.mit.*;
+import ru.spbau.mit.Client;
+import ru.spbau.mit.ClientFileInfo;
+import ru.spbau.mit.TorrentClientMain;
+import ru.spbau.mit.TorrentTracker;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -134,26 +136,27 @@ public final class TorrentTests {
     @Test
     public void simpleTestLoad() throws IOException {
         testLoadFileSize(CONTAINS.length(), 0, CONTAINS);
-        testLoadFileSize(CONTAINS.length()*2, 0, CONTAINS);
+        testLoadFileSize(CONTAINS.length() * 2, 0, CONTAINS);
     }
 
     @Test
     public void offsetTestLoad() throws IOException {
         final int offset = 10;
         testLoadFileSize(CONTAINS.length() + offset, offset, CONTAINS);
-        testLoadFileSize(CONTAINS.length()*2 + offset, offset, CONTAINS);
+        testLoadFileSize(CONTAINS.length() * 2 + offset, offset, CONTAINS);
     }
 
     @Test
     public void loadBigFile() throws IOException {
-        final long size = ClientFileInfo.SIZE_OF_FILE_PIECE*5;
-        final int offset = ClientFileInfo.SIZE_OF_FILE_PIECE*2;
+        final long size = ClientFileInfo.SIZE_OF_FILE_PIECE * 5;
+        final int offset = ClientFileInfo.SIZE_OF_FILE_PIECE * 2;
         testLoadFileSize(size, offset, CONTAINS);
         StringBuilder bigContain = new StringBuilder();
         for (int i = 0; i < ClientFileInfo.SIZE_OF_FILE_PIECE + 10; i++) {
             bigContain.append('a');
         }
         testLoadFileSize(size, offset, bigContain.toString());
+        testLoadFileSize(size + 5, offset - 2, bigContain.toString());
     }
 
     private void testLoadFileSize(long size, int offset, String contains) throws IOException {
