@@ -317,8 +317,12 @@ public class Client implements AutoCloseable{
                     curConnection.sendType(Connection.STAT_QUERY);
                     curConnection.sendInt(id);
                     int count = curConnection.readInt();
-                    for (int j = 0; j < count; j++) {
+                    Set<Integer> availableParts = new HashSet<>();
+                    for (int i = 0; i < count; i++) {
                         int part = curConnection.readInt();
+                        availableParts.add(part);
+                    }
+                    for (int part: availableParts) {
                         if (part >= countOfParts) {
                             continue;
                         }
@@ -402,13 +406,13 @@ public class Client implements AutoCloseable{
                 long fileSize = clientFileData.getIdFileMap().get(id).getSize();
                 int partLength;
                 if ((part + 1) * ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
-                    partLength = (int) fileSize % ClientFileInfo.SIZE_OF_FILE_PIECE;
+                    partLength = (int) (fileSize - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
                 } else {
                     partLength = ClientFileInfo.SIZE_OF_FILE_PIECE;
                 }
                 byte[] partText = curConnection.readPart(partLength);
-                randomAccessFile.write(partText,
-                                part * ClientFileInfo.SIZE_OF_FILE_PIECE, partText.length);
+                randomAccessFile.seek(part * ClientFileInfo.SIZE_OF_FILE_PIECE);
+                randomAccessFile.write(partText);
             } catch (IOException e) {
                 e.printStackTrace();
                 return false;
@@ -503,7 +507,7 @@ public class Client implements AutoCloseable{
             if (part != curInfo.getCountOfPieces() - 1) {
                 sizeOfPiece = ClientFileInfo.SIZE_OF_FILE_PIECE;
             } else {
-                sizeOfPiece = (int) curInfo.getSize() % ClientFileInfo.SIZE_OF_FILE_PIECE;
+                sizeOfPiece = (int) (curInfo.getSize() - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
             }
             try {
                 curConnection.sendPart(clientFileData.getIdFileMap().get(id).getFile(),

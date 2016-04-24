@@ -2,15 +2,15 @@
  * Created by n_buga on 19.04.16.
  */
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import ru.spbau.mit.Client;
-import ru.spbau.mit.TorrentClientMain;
-import ru.spbau.mit.TorrentTracker;
+import ru.spbau.mit.*;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -132,7 +132,31 @@ public final class TorrentTests {
     }
 
     @Test
-    public void simpleLoad() throws IOException {
+    public void simpleTestLoad() throws IOException {
+        testLoadFileSize(CONTAINS.length(), 0, CONTAINS);
+        testLoadFileSize(CONTAINS.length()*2, 0, CONTAINS);
+    }
+
+    @Test
+    public void offsetTestLoad() throws IOException {
+        final int offset = 10;
+        testLoadFileSize(CONTAINS.length() + offset, offset, CONTAINS);
+        testLoadFileSize(CONTAINS.length()*2 + offset, offset, CONTAINS);
+    }
+
+    @Test
+    public void loadBigFile() throws IOException {
+        final long size = ClientFileInfo.SIZE_OF_FILE_PIECE*5;
+        final int offset = ClientFileInfo.SIZE_OF_FILE_PIECE*2;
+        testLoadFileSize(size, offset, CONTAINS);
+        StringBuilder bigContain = new StringBuilder();
+        for (int i = 0; i < ClientFileInfo.SIZE_OF_FILE_PIECE + 10; i++) {
+            bigContain.append('a');
+        }
+        testLoadFileSize(size, offset, bigContain.toString());
+    }
+
+    private void testLoadFileSize(long size, int offset, String contains) throws IOException {
         Path directory = Paths.get(".", "files");
         String fileName = "1.txt";
         Path file = Paths.get(directory.toString(), fileName);
@@ -145,57 +169,55 @@ public final class TorrentTests {
 
             Files.createDirectory(directory);
             Files.createFile(file);
-            DataOutputStream outFile = new DataOutputStream(new FileOutputStream(file.toString()));
-            outFile.writeUTF(CONTAINS);
-            outFile.close();
+            RandomAccessFile f = new RandomAccessFile(file.toString(), "rw");
+            f.setLength(size);
+            f.seek(offset);
+            f.write(contains.getBytes());
+            f.close();
 
-            try (Client clientCheck = new Client(IP_TORRENT);) {
+            createClients();
 
-                Thread.sleep(TIME_OUT_AFTER_SERVER_START);
+            Thread.sleep(TIME_OUT_AFTER_SERVER_START);
 
-                String[] in = {UPLOAD_QUERY, IP_TORRENT, file.toString()};
-                TorrentClientMain.main(in);
+            String[] in = {UPLOAD_QUERY, IP_TORRENT, file.toString()};
+            TorrentClientMain.main(in);
 
-                Client runClient = new Client(IP_TORRENT);
-                runClient.start();
+            Client runClient = new Client(IP_TORRENT);
+            runClient.start();
 
-                Thread.sleep(TIME_OUT_FOR_UPDATE);
+            Thread.sleep(TIME_OUT_FOR_UPDATE);
 
-                TorrentClientMain.main(LIST_QUERY);
+            TorrentClientMain.main(LIST_QUERY);
 
-                Set<Client.TorrentClient.FileInfo> availableFiles = clientCheck.getList();
-                assertTrue(availableFiles.size() > 0);
+            Set<Client.TorrentClient.FileInfo> availableFiles = clientCheck.getList();
+            assertTrue(availableFiles.size() > 0);
 
-                clientCheck.markAsWantToLoad(0);
-                Set<Thread> loadThreads = clientCheck.run();
+            clientCheck.markAsWantToLoad(0);
+            Set<Thread> loadThreads = clientCheck.run();
 
-                for (Thread t: loadThreads) {
-                    t.join();
-                }
-
-                Path newFile = Paths.get(pathToFiles.toString(), "0", fileName);
-
-                assertTrue(Files.exists(pathToFiles));
-                assertTrue(Files.exists(newFile));
-
-                String contains;
-
-                DataInputStream inFile = new DataInputStream(new FileInputStream(newFile.toString()));
-                contains = inFile.readUTF();
-                inFile.close();
-
-                String initString;
-
-                inFile = new DataInputStream(new FileInputStream(file.toString()));
-                initString = inFile.readUTF();
-                inFile.close();
-
-                assertTrue(contains.equals(initString));
-
-                runClient.close();
-                clientCheck.resetData();
-                runClient.resetData();
+            for (Thread t: loadThreads) {
+                t.join();
             }
+
+            Path newFile = Paths.get(pathToFiles.toString(), "0", fileName);
+
+            assertTrue(Files.exists(pathToFiles));
+            assertTrue(Files.exists(newFile));
+
+            String curContains;
+
+            RandomAccessFile inFile = new RandomAccessFile(newFile.toString(), "rw");
+            byte[] result = new byte[contains.length()];
+            inFile.seek(offset);
+            inFile.read(result);
+            curContains = new String(result);
+            inFile.close();
+
+            runClient.close();
+            runClient.resetData();
+
+            assertTrue(curContains.equals(contains));
+
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
         } finally {

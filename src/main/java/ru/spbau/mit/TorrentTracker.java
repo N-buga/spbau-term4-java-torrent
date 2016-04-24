@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class TorrentTracker implements AutoCloseable {
-    public static final int TIME_OUT_SCHEDULE =  20;
+    public static final int TIME_OUT_SCHEDULE =  50;
 
     private Set<Integer> idAvailableFiles;
     private Map<Integer, TrackerFileInfo> idFileMap;
