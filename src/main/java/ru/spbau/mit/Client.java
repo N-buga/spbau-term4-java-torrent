@@ -7,7 +7,6 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.acl.LastOwnerException;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -128,7 +127,7 @@ public class Client implements AutoCloseable{
                 this.id = id;
                 this.name = name;
                 this.size = size;
-                countParts = (int) (size - 1) / ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
+                countParts = (int) ((size - 1) / ClientFileInfo.SIZE_OF_FILE_PIECE) + 1;
             }
 
             public int getID() {
@@ -334,7 +333,7 @@ public class Client implements AutoCloseable{
                         int part = curConnection.readInt();
                         availableParts.add(part);
                     }
-                    System.out.printf("size of file = %d\n", (int) size);
+                    System.out.printf("size of file = %d\n", size);
                     System.out.printf("count of avaliables parts %d\n", countOfParts);
                     for (int part: availableParts) {
                         if (part >= countOfParts) {
@@ -342,7 +341,7 @@ public class Client implements AutoCloseable{
                         }
                         if (!loadParts.get(part)) {
                             if (savePart(curConnection, part, id, curFile)) {
-                                if (part % 100 == 0) {
+                                if (part % 100 == 0 || part > countOfParts - 100) {
                                     System.out.printf("part %d is loaded\n", part);
                                 }
                                 clientFileData.addPart(id, part);
@@ -426,13 +425,14 @@ public class Client implements AutoCloseable{
             try {
                 long fileSize = clientFileData.getIdFileMap().get(id).getSize();
                 int partLength;
-                if ((part + 1) * ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
-                    partLength = (int) (fileSize - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
+                if (((long) (part + 1)) * ClientFileInfo.SIZE_OF_FILE_PIECE > fileSize) {
+                    partLength = (int) ((fileSize - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1);
                 } else {
                     partLength = ClientFileInfo.SIZE_OF_FILE_PIECE;
                 }
                 byte[] partText = curConnection.readPart(partLength);
-                randomAccessFile.seek(part * ClientFileInfo.SIZE_OF_FILE_PIECE);
+                long offset = ((long) part) * ClientFileInfo.SIZE_OF_FILE_PIECE;
+                randomAccessFile.seek(offset);
                 randomAccessFile.write(partText);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -528,12 +528,12 @@ public class Client implements AutoCloseable{
             if (part != curInfo.getCountOfPieces() - 1) {
                 sizeOfPiece = ClientFileInfo.SIZE_OF_FILE_PIECE;
             } else {
-                sizeOfPiece = (int) (curInfo.getSize() - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
+                sizeOfPiece = (int) ((curInfo.getSize() - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1);
             }
             try {
                 RandomAccessFile ra = clientFileData.getIdFileMap().get(id).getFile();
                 curConnection.sendPart(ra,
-                        part * ClientFileInfo.SIZE_OF_FILE_PIECE, sizeOfPiece);
+                        ((long) part) * ClientFileInfo.SIZE_OF_FILE_PIECE, sizeOfPiece, part);
                 ra.close();
             } catch (IOException e) {
                 e.printStackTrace();

@@ -14,7 +14,7 @@ import java.util.Scanner;
  * Created by n_buga on 10.04.16.
  */
 public class ClientFileInfo {
-    public static final int SIZE_OF_FILE_PIECE = (int) 1e5;
+    public static final int SIZE_OF_FILE_PIECE = (int) 1e5; //1024*1024
 
     private BitSet partsOfFile;
     private Path filePath;

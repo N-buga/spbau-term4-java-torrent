@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -134,7 +133,7 @@ public class Connection implements AutoCloseable {
             int prevValue = -1;
             while (readBytes < countOfBytes && prevValue != readBytes) {
                 prevValue = readBytes;
-                readBytes += in.read(part, 0, countOfBytes - readBytes);
+                readBytes += in.read(part, readBytes, countOfBytes - readBytes);
             }
             if (readBytes < countOfBytes) {
                 return null;
@@ -227,7 +226,7 @@ public class Connection implements AutoCloseable {
         out.flush();
     }
 
-    public void sendPart(RandomAccessFile file, int offset, int len) throws IOException {
+    public void sendPart(RandomAccessFile file, long offset, int len, int partNumber) throws IOException {
         byte[] data = new byte[len];
         file.seek(offset);
         file.read(data, 0, len);

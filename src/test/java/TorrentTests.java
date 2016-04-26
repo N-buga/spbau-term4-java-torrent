@@ -52,6 +52,7 @@ public final class TorrentTests {
 
     @Test
     public void testListSimple() throws IOException {
+        System.out.println("test list simple");
         Path directory1 = Paths.get(".", "1");
         Path directory2 = Paths.get(".", "2");
 
@@ -87,6 +88,8 @@ public final class TorrentTests {
 
     @Test
     public void testList() throws IOException {
+        System.out.println("Test Load");
+
         Path directory1 = Paths.get(".", "1");
         Path directory2 = Paths.get(".", "2");
 
@@ -135,12 +138,14 @@ public final class TorrentTests {
 
     @Test
     public void simpleTestLoad() throws IOException {
+        System.out.println("Simple test load");
         testLoadFileSize(CONTAINS.length(), 0, CONTAINS);
         testLoadFileSize(CONTAINS.length() * 2, 0, CONTAINS);
     }
 
     @Test
     public void offsetTestLoad() throws IOException {
+        System.out.println("Offset test load");
         final int offset = 10;
         testLoadFileSize(CONTAINS.length() + offset, offset, CONTAINS);
         testLoadFileSize(CONTAINS.length() * 2 + offset, offset, CONTAINS);
@@ -148,6 +153,7 @@ public final class TorrentTests {
 
     @Test
     public void loadBigFile() throws IOException {
+        System.out.println("Load  Bif File");
         final long size = ClientFileInfo.SIZE_OF_FILE_PIECE * 5;
         final int offset = ClientFileInfo.SIZE_OF_FILE_PIECE * 2;
         testLoadFileSize(size, offset, CONTAINS);
