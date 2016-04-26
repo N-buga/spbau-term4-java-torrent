@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -171,8 +172,8 @@ public class Connection implements AutoCloseable {
             out.writeInt(file.getID());
             out.writeUTF(file.getName());
             out.writeLong(file.getSize());
-            out.flush();
         }
+        out.flush();
     }
 
     public void sendType(int type) throws IOException {
@@ -205,15 +206,15 @@ public class Connection implements AutoCloseable {
         for (ClientInfo clientInfo : clientInfos) {
             out.write(clientInfo.getServerIP());
             out.writeInt(clientInfo.getServerPort());
-            out.flush();
         }
+        out.flush();
     }
 
     public void sendIntegerSet(Set<Integer> num) throws IOException {
         for (Integer number: num) {
             out.writeInt(number);
-            out.flush();
         }
+        out.flush();
     }
 
     public void sendBitSet(BitSet b) throws IOException {
@@ -221,9 +222,9 @@ public class Connection implements AutoCloseable {
         for (int i = 0; i < b.size(); i++) {
             if (b.get(i)) {
                 out.writeInt(i);
-                out.flush();
             }
         }
+        out.flush();
     }
 
     public void sendPart(RandomAccessFile file, int offset, int len) throws IOException {

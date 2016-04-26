@@ -1,11 +1,13 @@
 package ru.spbau.mit;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.acl.LastOwnerException;
 import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -202,8 +204,13 @@ public class Client implements AutoCloseable{
             long size;
             try {
                 size = Files.size(filePath);
-            } catch (IOException e) {
+            } catch (FileNotFoundException e) {
                 System.out.println("Sorry, file doesn't exist");
+                lock.unlock();
+                return -1;
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println(filePath.toString());
                 lock.unlock();
                 return -1;
             }
@@ -307,6 +314,11 @@ public class Client implements AutoCloseable{
             clientFileData.addFile(id, size, curPath);
             Set<ClientInfo> seeds = sources(id);
             if (seeds == null) {
+                try {
+                    curFile.close();
+                } catch (IOException e) {
+/* !!!!*/           e.printStackTrace();
+                }
                 return;
             }
             BitSet loadParts = new BitSet(countOfParts + 1);
@@ -322,12 +334,17 @@ public class Client implements AutoCloseable{
                         int part = curConnection.readInt();
                         availableParts.add(part);
                     }
+                    System.out.printf("size of file = %d\n", (int) size);
+                    System.out.printf("count of avaliables parts %d\n", countOfParts);
                     for (int part: availableParts) {
                         if (part >= countOfParts) {
                             continue;
                         }
                         if (!loadParts.get(part)) {
                             if (savePart(curConnection, part, id, curFile)) {
+                                if (part % 100 == 0) {
+                                    System.out.printf("part %d is loaded\n", part);
+                                }
                                 clientFileData.addPart(id, part);
                                 loadParts.set(part);
                             }
@@ -344,6 +361,11 @@ public class Client implements AutoCloseable{
                 System.out.printf("File with id = %d is loaded\n", id);
 
             }
+            try {
+                curFile.close();
+            } catch (IOException e) {
+/*!!!!*/        e.printStackTrace();
+            }
         }
 
         private void start() {
@@ -358,7 +380,6 @@ public class Client implements AutoCloseable{
                 trackerSocket = new Socket(ipTorrent, SERVER_PORT);
                 state = State.RUNNING;
             } catch (IOException e) {
-                e.printStackTrace();
                 System.out.println("Can't connect with torrent");
                 return;
             }
@@ -510,8 +531,10 @@ public class Client implements AutoCloseable{
                 sizeOfPiece = (int) (curInfo.getSize() - 1) % ClientFileInfo.SIZE_OF_FILE_PIECE + 1;
             }
             try {
-                curConnection.sendPart(clientFileData.getIdFileMap().get(id).getFile(),
+                RandomAccessFile ra = clientFileData.getIdFileMap().get(id).getFile();
+                curConnection.sendPart(ra,
                         part * ClientFileInfo.SIZE_OF_FILE_PIECE, sizeOfPiece);
+                ra.close();
             } catch (IOException e) {
                 e.printStackTrace();
                 curConnection.close();

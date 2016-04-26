@@ -19,6 +19,8 @@ public abstract class TorrentClientMain {
         String address = args[1];
         Client client = new Client(address);
 
+        System.out.println(command);
+
         switch (command) {
             case "list":
                 Set<Client.TorrentClient.FileInfo> answer = client.getList();
