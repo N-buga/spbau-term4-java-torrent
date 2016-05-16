@@ -7,9 +7,7 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +21,7 @@ public class Client implements AutoCloseable{
     private ClientFileData clientFileData;
     private TorrentClient torrentClient;
     private TorrentServer torrentServer;
+    private Map<Thread, Integer> loadedParts = new HashMap<>();
 
     public Client(String ipTorrent) {
         clientFileData = new ClientFileData();
@@ -34,6 +33,10 @@ public class Client implements AutoCloseable{
         clientFileData = new ClientFileData(directoryForData);
         clientFileData.updateDataFromFile();
         torrentClient = new TorrentClient(ipTorrent);
+    }
+
+    public Client.State getStateClient() {
+        return torrentClient.getState();
     }
 
     public void start() {
@@ -48,6 +51,10 @@ public class Client implements AutoCloseable{
         if (torrentServer != null) {
             torrentServer.close();
         }
+    }
+
+    public int getLoadedParts(Thread t) {
+        return loadedParts.get(t);
     }
 
     public void resetData() {
@@ -102,7 +109,7 @@ public class Client implements AutoCloseable{
         return result;
     }
 
-    private enum State {NOT_STARTED, END, MISSED_CONNECTION, RUNNING};
+    public enum State {NOT_STARTED, END, MISSED_CONNECTION, RUNNING};
 
     public class TorrentClient implements AutoCloseable {
         private static final int TIME_OUT_OF_WAITING_CONNECTION = 200;
@@ -168,8 +175,13 @@ public class Client implements AutoCloseable{
             try {
                 trackerSocket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("Client closed not correct.");
+            } catch (NullPointerException ignored) {
             }
+        }
+
+        public Client.State getState() {
+            return state;
         }
 
         public String getIP() {
@@ -344,6 +356,12 @@ public class Client implements AutoCloseable{
                                 if (part % 100 == 0 || part > countOfParts - 100) {
                                     System.out.printf("part %d is loaded\n", part);
                                 }
+                                if (loadedParts.containsKey(Thread.currentThread())) {
+                                    loadedParts.put(Thread.currentThread(),
+                                            loadedParts.get(Thread.currentThread()) + 1);
+                                } else {
+                                    loadedParts.put(Thread.currentThread(), 1);
+                                }
                                 clientFileData.addPart(id, part);
                                 loadParts.set(part);
                             }
@@ -387,10 +405,14 @@ public class Client implements AutoCloseable{
 
         private void tryConnect() {
             System.out.println("Try to connect");
-            while (state != State.RUNNING) {
+            while (state != State.RUNNING && state != State.END) {
                 connect();
             }
-            System.out.println("Connection successfully repaired");
+            if (state == State.RUNNING) {
+                System.out.println("Connection successfully repaired");
+            } else {
+                return;
+            }
         }
 
         private Set<ClientInfo> sources(int id) {
